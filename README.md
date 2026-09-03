@@ -160,7 +160,7 @@ Full docs: [PowerShell/README.md](PowerShell/README.md#invoke-codexsessionps1) �
 <summary><code>Show-AnsiDemo.ps1</code> - Prints an ANSI escape-code demo table to verify terminal styling.</summary>
 
 PowerShell · Cross-platform · ANSI-capable terminal
-Full docs: [PowerShell/Windows-Terminal/README.md](PowerShell/Windows-Terminal/README.md#show-ansidemops1)
+Full docs: [PowerShell/Windows-Terminal/README.md](PowerShell/Windows-Terminal/README.md#2-verification)
 </details>
 
 ### System Provisioning
