@@ -1,44 +1,68 @@
 <#
 .SYNOPSIS
     Copies landscape Windows Spotlight background images to a target directory and optionally renames them.
+
 .DESCRIPTION
-    Finds and copies landscape-oriented images from the local Spotlight assets directory
-    to a specified target directory, renaming them as .jpg files.
-    After copying, it offers to rename the files based on their "Date Taken" metadata and dimensions.
+    Finds and copies landscape-oriented images from the local Windows Spotlight assets cache to
+    a specified target directory, renaming them as .jpg files. After copying, offers to rename
+    the files based on their "Date Taken" metadata and dimensions (same logic as
+    Rename-JpgOnDateTaken.ps1).
+
 .PARAMETER TargetDir
-    The directory where the wallpapers will be copied. Defaults to the script's directory.
-.PARAMETER Help
-    Displays this help message.
+    The directory where the wallpapers will be copied. Defaults to the current working directory.
+
+.PARAMETER NonInteractive
+    Skips the optional post-copy rename prompt and every "press Enter to continue" pause, so the
+    script can run unattended. The rename step is skipped (not auto-approved) in this mode - it's
+    an optional enhancement, and skipping it is the safe default for an unattended run.
+
 .EXAMPLE
-    .\Copy-SpotLightWallpapers.ps1
+    .\Copy-SpotlightWallpapers.ps1
+    Copies landscape Spotlight wallpapers into the current directory.
+
 .EXAMPLE
-    .\Copy-SpotLightWallpapers.ps1 -TargetDir "C:\Wallpapers"
+    .\Copy-SpotlightWallpapers.ps1 -TargetDir "C:\Wallpapers"
+    Copies them into C:\Wallpapers instead.
+
 .EXAMPLE
-    .\Copy-SpotLightWallpapers.ps1 --help
+    .\Copy-SpotlightWallpapers.ps1 -TargetDir "C:\Wallpapers" -NonInteractive
+    Copies them into C:\Wallpapers without any prompts or pauses - suitable for a scheduled task.
+
+.NOTES
+    Prerequisites: .NET System.Drawing assembly (available by default on Windows).
+    Platform: Windows-only - the Windows Spotlight assets cache and the Shell.Application COM
+    object used for the optional rename step don't exist off Windows.
 #>
-[CmdletBinding(SupportsShouldProcess=$true)]
+
+[CmdletBinding(SupportsShouldProcess = $true, PositionalBinding = $false)]
 param(
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$TargetDir = (Get-Location).Path,
 
-    [Alias("h")]
-    [switch]$Help
+    [switch]$NonInteractive,
+
+    [Alias('h')]
+    [switch]$Help,
+
+    [Parameter(ValueFromRemainingArguments = $true, DontShow = $true)]
+    [string[]]$RemainingArguments
 )
 
-if ($Help) {
-    Get-Help $PSCommandPath
+. (Join-Path -Path $PSScriptRoot -ChildPath ".." -AdditionalChildPath "Common", "ScriptHelp.ps1")
+if (Test-HelpRequested -Help:$Help -RemainingArguments $RemainingArguments) {
+    Get-Help -Full $PSCommandPath
     return
 }
 
 function Invoke-WallpaperRename {
-    [CmdletBinding(SupportsShouldProcess=$true)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [string]$DirectoryPath,
         [int]$IndexStart = 1
     )
 
     Write-Host "`nStarting rename process in '$DirectoryPath'..." -ForegroundColor Cyan
-    
+
     $shell = New-Object -COMObject Shell.Application
     $folder = $shell.Namespace($DirectoryPath)
 
@@ -78,7 +102,7 @@ function Invoke-WallpaperRename {
             $dateStr = $folder.GetDetailsOf($shellFile, $propIndices["Date taken"])
             if ($dateStr) { $dateSource = "Date taken" }
         }
-        
+
         if (-not $dateStr -and $propIndices.ContainsKey("Date acquired")) {
             $dateStr = $folder.GetDetailsOf($shellFile, $propIndices["Date acquired"])
             if ($dateStr) { $dateSource = "Date acquired" }
@@ -88,7 +112,7 @@ function Invoke-WallpaperRename {
             $dateStr = $folder.GetDetailsOf($shellFile, $propIndices["Date modified"])
             if ($dateStr) { $dateSource = "Date modified" }
         }
-        
+
         $widthStr = $folder.GetDetailsOf($shellFile, $propIndices["Width"])
         $heightStr = $folder.GetDetailsOf($shellFile, $propIndices["Height"])
 
@@ -98,7 +122,7 @@ function Invoke-WallpaperRename {
                 $dateValue = [datetime]::Parse($cleanedDateStr, [System.Globalization.CultureInfo]::CurrentCulture)
                 $width = $widthStr -replace '\D'
                 $height = $heightStr -replace '\D'
-                
+
                 $index = $IndexStart
                 do {
                     $newName = "{0:yyyy-MM-dd}_{1}x{2}_{3:D3}.jpg" -f $dateValue, $width, $height, $index
@@ -128,8 +152,8 @@ if (-not (Test-Path -Path $destination)) {
     }
     catch {
         Write-Host "ERROR: Could not create target directory: $destination" -ForegroundColor Red
-        pause
-        exit
+        if (-not $NonInteractive) { pause }
+        exit 1
     }
 }
 
@@ -140,14 +164,14 @@ try {
 catch {
     Write-Host "FATAL: Could not load the required System.Drawing assembly." -ForegroundColor Red
     Write-Host $_.Exception.Message
-    pause
-    exit
+    if (-not $NonInteractive) { pause }
+    exit 1
 }
 
 if (-not (Test-Path -Path $source)) {
     Write-Host "ERROR: Windows Spotlight assets folder not found at the expected location." -ForegroundColor Red
-    pause
-    exit
+    if (-not $NonInteractive) { pause }
+    exit 1
 }
 
 
@@ -180,10 +204,16 @@ foreach ($img in $images) {
 Write-Host "`nCopy process finished."
 
 # --- Post-run Prompt ---
-$confirmation = Read-Host "Do you wish to rename the copied files in '$destination' using the integrated Date-Taken logic? (y/n)"
-if ($confirmation -match '^y') {
-    Invoke-WallpaperRename -DirectoryPath $destination
+if ($NonInteractive) {
+    Write-Host "`nNonInteractive: skipping optional rename step."
+} else {
+    $confirmation = Read-Host "Do you wish to rename the copied files in '$destination' using the integrated Date-Taken logic? (y/n)"
+    if ($confirmation -match '^y') {
+        Invoke-WallpaperRename -DirectoryPath $destination
+    }
 }
 
-Write-Host "`nScript finished. Press Enter to exit."
-pause
+if (-not $NonInteractive) {
+    Write-Host "`nScript finished. Press Enter to exit."
+    pause
+}

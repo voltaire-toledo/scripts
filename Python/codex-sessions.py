@@ -449,10 +449,31 @@ def backup_codex_home(args: argparse.Namespace) -> int:
     return 0
 
 
+EPILOG = """\
+Examples:
+  codex-sessions.py list
+      List local Codex sessions.
+
+  codex-sessions.py delete 019e626d --dry-run
+      Preview deleting a session by full ID or unambiguous prefix.
+
+  codex-sessions.py delete 019e626d --yes
+      Delete a session after explicit confirmation bypass.
+
+  codex-sessions.py clear --dry-run
+      Preview deleting all local sessions.
+
+  codex-sessions.py backup ~/codex-backup
+      Copy the Codex home directory before running a cleanup.
+"""
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="codex-sessions",
         description="List and selectively delete local Codex session storage.",
+        epilog=EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--codex-home",

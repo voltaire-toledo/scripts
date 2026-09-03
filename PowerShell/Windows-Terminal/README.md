@@ -17,7 +17,7 @@ Essential settings for modern CLI tools, ANSI styling, and rebuilt-ready environ
 To confirm all decorations (Bold and Bright) are working correctly, run the demonstration script:
 
 ```powershell
-.\demo_ansi.ps1
+.\Show-AnsiDemo.ps1
 ```
 
 ## 3. Setting Summaries

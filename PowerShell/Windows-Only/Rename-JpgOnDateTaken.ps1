@@ -3,38 +3,53 @@
     Renames JPG files based on their "Date Taken", "Date Acquired", or "Date Modified" properties and image dimensions.
 
 .DESCRIPTION
-    This script renames JPG files in a specified directory to a standardized format: "yyyy-MM-dd_####x####_###.jpg".
-    The date is determined by the first available property in the following order: "Date Taken", "Date Acquired", "Date Modified".
-    The width and height are from the image dimensions.
-    An index is appended to handle files with the same date and dimensions.
-
-    The script supports -WhatIf to show what would be renamed without actually performing the rename.
-    It will also ignore files that already follow the 'yyyy-MM-dd_####x####_###.jpg' pattern.
+    Renames JPG files in a directory to a standardized format: "yyyy-MM-dd_WIDTHxHEIGHT_###.jpg".
+    The date is determined by the first available property in the following order: "Date Taken",
+    "Date Acquired", "Date Modified". Width/height come from the image dimensions. An index is
+    appended to handle files with the same date and dimensions. Files already matching the
+    target pattern are skipped.
 
 .PARAMETER DirectoryPath
-    The path to the directory containing the JPG files to be renamed. Defaults to the current directory.
+    The path to the directory containing the JPG files to be renamed. Defaults to the current
+    working directory.
 
 .PARAMETER IndexStart
     The starting number for the index in the filename. Defaults to 1.
 
 .EXAMPLE
-    PS C:\> .\Rename-jpgOnDateTaken.ps1 -WhatIf
-    Description:
-    This command previews the renaming of JPG files in the current directory.
+    .\Rename-JpgOnDateTaken.ps1 -WhatIf
+    Previews the renaming of JPG files in the current directory without changing anything.
 
 .EXAMPLE
-    PS C:\> .\Rename-jpgOnDateTaken.ps1 -DirectoryPath "C:\Photos" -Force
-    Description:
-    This command renames all JPG files in "C:\Photos" according to the specified format.
+    .\Rename-JpgOnDateTaken.ps1 -DirectoryPath "C:\Photos"
+    Renames all JPG files in "C:\Photos" according to the standardized format.
+
+.NOTES
+    Prerequisites: None beyond Windows itself.
+    Platform: Windows-only - relies on the Shell.Application COM object to read Date
+    Taken/Acquired/Modified metadata, which doesn't exist off Windows.
 #>
-[CmdletBinding(SupportsShouldProcess=$true)]
+
+[CmdletBinding(SupportsShouldProcess = $true, PositionalBinding = $false)]
 param(
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$DirectoryPath = (Get-Location).Path,
 
-    [Parameter(Mandatory=$false)]
-    [int]$IndexStart = 1
+    [Parameter(Mandatory = $false)]
+    [int]$IndexStart = 1,
+
+    [Alias('h')]
+    [switch]$Help,
+
+    [Parameter(ValueFromRemainingArguments = $true, DontShow = $true)]
+    [string[]]$RemainingArguments
 )
+
+. (Join-Path -Path $PSScriptRoot -ChildPath ".." -AdditionalChildPath "Common", "ScriptHelp.ps1")
+if (Test-HelpRequested -Help:$Help -RemainingArguments $RemainingArguments) {
+    Get-Help -Full $PSCommandPath
+    return
+}
 
 $shell = New-Object -COMObject Shell.Application
 $folder = $shell.Namespace($DirectoryPath)
@@ -81,7 +96,7 @@ foreach ($file in $files) {
         $dateStr = $folder.GetDetailsOf($shellFile, $propIndices["Date taken"])
         if ($dateStr) { $dateSource = "Date taken" }
     }
-    
+
     if (-not $dateStr -and $propIndices.ContainsKey("Date acquired")) {
         $dateStr = $folder.GetDetailsOf($shellFile, $propIndices["Date acquired"])
         if ($dateStr) { $dateSource = "Date acquired" }
@@ -91,7 +106,7 @@ foreach ($file in $files) {
         $dateStr = $folder.GetDetailsOf($shellFile, $propIndices["Date modified"])
         if ($dateStr) { $dateSource = "Date modified" }
     }
-    
+
     $widthStr = $folder.GetDetailsOf($shellFile, $propIndices["Width"])
     $heightStr = $folder.GetDetailsOf($shellFile, $propIndices["Height"])
 
@@ -101,10 +116,9 @@ foreach ($file in $files) {
             $dateValue = [datetime]::Parse($cleanedDateStr, [System.Globalization.CultureInfo]::CurrentCulture)
             $width = $widthStr -replace '\D'
             $height = $heightStr -replace '\D'
-            
+
             $index = $IndexStart
             do {
-                # Use the new format for the new name
                 $newName = "{0:yyyy-MM-dd}_{1}x{2}_{3:D3}.jpg" -f $dateValue, $width, $height, $index
                 $newFilePath = Join-Path -Path $DirectoryPath -ChildPath $newName
                 $index++
