@@ -46,10 +46,45 @@ entry and all together at the bottom of this section).
 ### Image & Media
 
 <details>
-<summary><code>ConvertTo-Ico.ps1</code> - Converts a single SVG/PNG into a multi-resolution <code>.ico</code>.</summary>
+<summary><code>ConvertTo-Ico.ps1</code> / <code>convert-to-ico.py</code> - Converts an image/SVG into a 7-tier PNG-compressed <code>.ico</code> (or extracts master PNG).</summary>
 
-PowerShell · Cross-platform · ImageMagick v7+
-Full docs: [PowerShell/README.md](PowerShell/README.md#convertto-icops1)
+PowerShell (Cross-platform · ImageMagick v7+) and Python (Cross-platform · Python 3.9+, Pillow).
+Full docs: [PowerShell/README.md](PowerShell/README.md#convertto-icops1) · [Python/README.md](Python/README.md#convert-to-icopy)
+</details>
+
+<details>
+<summary><code>convert-image-format.py</code> - Universal image format converter across PNG, JPG, WEBP, AVIF, SVG, ICO, BMP, TIFF, HEIC, and GIF.</summary>
+
+Python · Cross-platform · Python 3.9+, Pillow, optional ImageMagick/FFmpeg
+Full docs: [Python/README.md](Python/README.md#convert-image-formatpy)
+</details>
+
+<details>
+<summary><code>resize-image-frame.py</code> - Smart resizing and aspect-ratio framing (<code>contain</code>, <code>cover</code>, <code>scale</code>, min/max Lanczos bounds).</summary>
+
+Python · Cross-platform · Python 3.9+, Pillow
+Full docs: [Python/README.md](Python/README.md#resize-image-framepy)
+</details>
+
+<details>
+<summary><code>edit-image-canvas.py</code> - Trims transparent margins, pads to 1:1 square, and applies 4x supersampled circle/rounded alpha masks.</summary>
+
+Python · Cross-platform · Python 3.9+, Pillow
+Full docs: [Python/README.md](Python/README.md#edit-image-canvaspy)
+</details>
+
+<details>
+<summary><code>new-web-icon-bundle.py</code> - Generates a full Favicon, PWA, and 1200x630 OpenGraph icon bundle plus <code>site.webmanifest</code>.</summary>
+
+Python · Cross-platform · Python 3.9+, Pillow
+Full docs: [Python/README.md](Python/README.md#new-web-icon-bundlepy)
+</details>
+
+<details>
+<summary><code>test-image-deps.py</code> - Audits Python version, Pillow codecs (WebP/AVIF), ImageMagick, and FFmpeg with remediation commands.</summary>
+
+Python · Cross-platform · Python 3.9+
+Full docs: [Python/README.md](Python/README.md#test-image-depspy)
 </details>
 
 <details>
